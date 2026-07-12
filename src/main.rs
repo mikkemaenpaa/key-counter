@@ -1,3 +1,5 @@
+mod keys;
+
 use std::{thread, time::Duration};
 
 #[link(name = "user32")]
@@ -7,13 +9,6 @@ unsafe extern "system" {
 
 const DELAY_TICKS: u32 = 27;
 const REPEAT_TICKS: u32 = 2;
-
-// mod keys that do not repeat while held: shift, ctrl, alt, caps, win key
-// + mouse left, right, scroll click, m4 + m5
-fn no_repeat(vk: usize) -> bool {
-    matches!(vk, 0x01 | 0x02 | 0x04 | 0x05 | 0x06 | 
-        0x10 | 0x11 | 0x12 | 0x14 | 0x58 | 0x5C)
-}
 
 // no double counting for ctrl + shift + alt
 fn should_skip(vk: usize) -> bool {
@@ -35,12 +30,12 @@ fn main() {
             if is_down {
                 if down_ticks[vk] == 0 {
                     counts[vk] += 1;
-                    println!("key {} -> {}", vk, counts[vk]);
-                } else if !no_repeat(vk) {
+                    println!("{} -> {}", keys::name(vk), counts[vk]);
+                } else if !keys::no_repeat(vk) {
                     let held = down_ticks[vk];
                     if held >= DELAY_TICKS && (held - DELAY_TICKS) % REPEAT_TICKS == 0 {
                         counts[vk] += 1;
-                        println!("key {} -> {}", vk, counts [vk]);
+                        println!("{} -> {}", keys::name(vk), counts[vk]);
                     }
                 }
                 down_ticks[vk] += 1;
