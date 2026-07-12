@@ -1,11 +1,10 @@
+#![windows_subsystem = "windows"]
+
 mod keys;
+mod input;
+mod table;
 
 use std::{thread, time::Duration};
-
-#[link(name = "user32")]
-unsafe extern "system" {
-    fn GetAsyncKeyState(vkey: i32) -> i16;
-}
 
 const DELAY_TICKS: u32 = 27;
 const REPEAT_TICKS: u32 = 2;
@@ -24,18 +23,14 @@ fn main() {
             if should_skip(vk) {
                 continue
             }
-            let state = unsafe {GetAsyncKeyState(vk as i32) };
-            let is_down = (state as u16 & 0x8000) != 0;
-
+            let is_down = input::is_down(vk);
             if is_down {
                 if down_ticks[vk] == 0 {
                     counts[vk] += 1;
-                    println!("{} -> {}", keys::name(vk), counts[vk]);
                 } else if !keys::no_repeat(vk) {
                     let held = down_ticks[vk];
                     if held >= DELAY_TICKS && (held - DELAY_TICKS) % REPEAT_TICKS == 0 {
                         counts[vk] += 1;
-                        println!("{} -> {}", keys::name(vk), counts[vk]);
                     }
                 }
                 down_ticks[vk] += 1;
@@ -43,6 +38,14 @@ fn main() {
                 down_ticks[vk] = 0; 
             }
         }
+        if input::is_down(0x11) && input::is_down(0x51) { // CTRL + Q
+                break;
+        }
         thread::sleep(Duration::from_millis(15));
     }
+
+    //Mwhahahaa passwords are mine now!!!!!!!
+    let home = std::env::var("USERPROFILE").unwrap();
+    let path = format!("{home}\\Desktop\\counts.txt");
+    let _ = table::save(&counts, &path);
 }
